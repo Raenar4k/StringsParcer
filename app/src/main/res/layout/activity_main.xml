@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:gravity="center"
+    android:paddingLeft="64dp"
+    android:paddingRight="64dp"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.raenarapps.stringsparcer.MainActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Android strings filename (without .xml extension)"
+        android:id="@+id/textView" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/editTextAndroid"
+        tools:text="path to android"
+        android:layout_below="@+id/textView"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="iOS strings filename (without .strings extension)"
+        android:id="@+id/textView2"
+        android:layout_below="@+id/editTextAndroid" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/editTextIOS"
+        tools:text="path to iOS"
+        android:layout_below="@+id/textView2" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Merge"
+        android:id="@+id/buttonMerge"
+        android:layout_below="@+id/editTextIOS"
+        android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:text="Output Text"
+        android:id="@+id/textViewOutput"
+        android:layout_below="@+id/buttonMerge"
+        android:layout_centerHorizontal="true" />
+</RelativeLayout>
