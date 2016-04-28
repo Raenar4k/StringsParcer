@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import rx.Observable;
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "Test";
@@ -44,6 +46,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (buttonMerge != null) {
             buttonMerge.setOnClickListener(this);
         }
+        Observable.just("hello")
+                .map(s -> s + " test observable")
+                .subscribe(s -> Log.d(TAG, "onCreate: " + s));
     }
 
     @Override
