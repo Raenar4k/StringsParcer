@@ -12,10 +12,12 @@ import android.widget.TextView;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlSerializer;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +29,10 @@ import rx.schedulers.Schedulers;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "Test";
+    public static final String PARCER_ANDROID_STRING = "string";
+    public static final String PARCER_ANDROID_NAME = "name";
+    public static final String PARCER_ANDROID_RESOURCES = "resources";
+    public static final String PARCER_ANDROID_NEW_FILENAME = "newStrings.xml";
     boolean debug = true;
     private EditText editTextAndroid;
     private EditText editTextiOS;
@@ -61,19 +67,46 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (debug) Log.d(TAG, "mkdirs");
             }
 
+            List<StringObject> mergedStringsList = new ArrayList<>();
+
             File androidFile = new File(pathAndroid, fileNameAndroid);
             if (androidFile.exists()) {
                 Observable.just(androidFile)
                         .subscribeOn(Schedulers.io())
                         .map(this::parseFromAndroid)
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(androidStringsList -> {
-                            for (StringObject stringObject : androidStringsList) {
-                                Log.d(TAG, "call: key=" + stringObject.getKey());
-                                Log.d(TAG, "call: value=" + stringObject.getValue());
-                            }
+                        .subscribe((collection) -> {
+                            mergedStringsList.addAll(collection);
+                            parseToAndroid(mergedStringsList);
                         });
             }
+        }
+    }
+
+    private void parseToAndroid(List<StringObject> mergedStringsList) {
+        File file = new File(Environment.getExternalStorageDirectory()+Const.DIRECTORY_ANDROID,
+                PARCER_ANDROID_NEW_FILENAME);
+        try {
+            file.createNewFile();
+            FileOutputStream fos = new FileOutputStream(file);
+            XmlSerializer serializer = Xml.newSerializer();
+            serializer.setOutput(fos, "UTF-8");
+            serializer.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true);
+            serializer.startTag("", PARCER_ANDROID_RESOURCES);
+            for (StringObject stringObject : mergedStringsList) {
+                if (stringObject.getOs().equals(Const.OS_ANDROID)){
+                    serializer.startTag(null, PARCER_ANDROID_STRING);
+                    serializer.attribute(null, PARCER_ANDROID_NAME, stringObject.getKey());
+                    serializer.text(stringObject.getValue());
+                    serializer.endTag(null, PARCER_ANDROID_STRING);
+                }
+            }
+            serializer.endTag("", PARCER_ANDROID_RESOURCES);
+            serializer.endDocument();
+            serializer.flush();
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -93,10 +126,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         if (debug) Log.d(TAG, "START_DOCUMENT");
                         break;
                     case XmlPullParser.START_TAG:
-                        if (parser.getName().equals("string")) {
+                        if (parser.getName().equals(PARCER_ANDROID_STRING)) {
                             gotText = false;
                             for (int i = 0; i < parser.getAttributeCount(); i++) {
-                                if (parser.getAttributeName(i).equals("name")) {
+                                if (parser.getAttributeName(i).equals(PARCER_ANDROID_NAME)) {
                                     //name of the string
                                     key = parser.getAttributeValue(i);
                                 }
