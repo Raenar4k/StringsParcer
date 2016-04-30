@@ -23,5 +23,9 @@ public class Constants {
         public static final String VALUE = "Value";
         public static final String NEW_VALUE = "New Value";
         public static final String OS = "OS";
+        public static final int KEY_INDEX = 0;
+        public static final int VALUE_INDEX = 1;
+        public static final int NEW_VALUE_INDEX = 2;
+        public static final int OS_INDEX = 3;
     }
 }

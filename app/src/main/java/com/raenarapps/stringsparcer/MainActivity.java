@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.raenarapps.stringsparcer.Constants.ParcerAndroid;
 import com.raenarapps.stringsparcer.Constants.ParcerCSV;
@@ -22,6 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,6 +31,7 @@ import java.util.List;
 
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -61,31 +64,66 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         if (debug) Log.d("Test", "onClick");
-        if (v.getId() == R.id.buttonMerge) {
-            String fileNameiOS = editTextiOS.getText().toString();
-            File pathiOS = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_IOS);
 
-            String fileNameAndroid = editTextAndroid.getText().toString() + Constants.ANDROID_EXT;
-            File pathAndroid = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_ANDROID);
-            if (!pathAndroid.exists()) {
-                pathAndroid.mkdirs();
-                if (debug) Log.d(TAG, "mkdirs");
-            }
+        String fileNameiOS = editTextiOS.getText().toString();
+        File pathiOS = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_IOS);
 
-            List<StringObject> mergedStringsList = new ArrayList<>();
-
-            File androidFile = new File(pathAndroid, fileNameAndroid);
-            if (androidFile.exists()) {
-                Observable.just(androidFile)
-                        .subscribeOn(Schedulers.io())
-                        .map(this::parseFromAndroid)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe((collection) -> {
-                            mergedStringsList.addAll(collection);
-                            exportToCSV(mergedStringsList);
-                        });
-            }
+        String fileNameAndroid = editTextAndroid.getText().toString() + Constants.ANDROID_EXT;
+        File pathAndroid = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_ANDROID);
+        if (!pathAndroid.exists()) {
+            pathAndroid.mkdirs();
+            if (debug) Log.d(TAG, "mkdirs");
         }
+
+        switch (v.getId()) {
+            case R.id.buttonMerge:
+                List<StringObject> mergedStringsList = new ArrayList<>();
+                File androidFile = new File(pathAndroid, fileNameAndroid);
+                if (androidFile.exists()) {
+                    Observable.just(androidFile)
+                            .subscribeOn(Schedulers.io())
+                            .map(this::parseFromAndroid)
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe((collection) -> {
+                                mergedStringsList.addAll(collection);
+                                exportToCSV(mergedStringsList);
+                            });
+                }
+                break;
+            case R.id.buttonSplit:
+                File file = new File(Environment.getExternalStorageDirectory()
+                        + Constants.DIRECTORY_MERGED, ParcerCSV.FILENAME);
+                if (file.exists()){
+                    Observable.just(file)
+                            .subscribeOn(Schedulers.io())
+                            .map(this::importFromCSV)
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(this::parseToAndroid);
+                }
+                break;
+        }
+    }
+
+    private List<StringObject> importFromCSV(File file) {
+        List<StringObject> mergedStringsList = new ArrayList<>();
+        try {
+            CSVReader csvReader = new CSVReader(new FileReader(file),';');
+            String nextLine[];
+            while ((nextLine = csvReader.readNext())!=null){
+                if (!nextLine[ParcerCSV.OS_INDEX].equals(ParcerCSV.OS)){
+                    String key = nextLine[ParcerCSV.KEY_INDEX];
+                    //skipping value, getting new value instead
+                    String value = nextLine[ParcerCSV.NEW_VALUE_INDEX];
+                    String os = nextLine[ParcerCSV.OS_INDEX];
+                    mergedStringsList.add(new StringObject(key,value,os));
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return mergedStringsList;
     }
 
     private void exportToCSV(List<StringObject> mergedStringsList) {

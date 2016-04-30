@@ -3,7 +3,7 @@ package com.raenarapps.stringsparcer;
 public class StringObject {
     private String key;
     private String value;
-    private String valueNew;
+//    private String valueNew;
     private String os;
     private boolean isTranslatable;
 
@@ -33,13 +33,13 @@ public class StringObject {
         this.value = value;
     }
 
-    public String getValueNew() {
-        return valueNew;
-    }
-
-    public void setValueNew(String valueNew) {
-        this.valueNew = valueNew;
-    }
+//    public String getValueNew() {
+//        return valueNew;
+//    }
+//
+//    public void setValueNew(String valueNew) {
+//        this.valueNew = valueNew;
+//    }
 
     public String getOs() {
         return os;
