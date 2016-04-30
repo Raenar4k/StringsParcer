@@ -54,6 +54,15 @@
         android:layout_height="match_parent"
         tools:text="Output Text"
         android:id="@+id/textViewOutput"
+        android:layout_below="@+id/buttonSplit"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Split"
+        android:id="@+id/buttonSplit"
         android:layout_below="@+id/buttonMerge"
         android:layout_centerHorizontal="true" />
 </RelativeLayout>

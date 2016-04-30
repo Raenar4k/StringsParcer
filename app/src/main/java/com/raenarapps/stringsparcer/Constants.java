@@ -1,6 +1,6 @@
 package com.raenarapps.stringsparcer;
 
-public class Const {
+public class Constants {
     public static final String OS_ANDROID = "android";
     public static final String OS_IOS = "iOS";
     public static final String OS_ANY = "any";
@@ -10,11 +10,14 @@ public class Const {
     public static final String DIRECTORY_ANDROID = "/StringsParcer/android";
     public static final String DIRECTORY_MERGED = "/StringsParcer/merged";
 
-    class ParcerAndroid {
-        public static final String ver = "1";
+     public static final class ParcerAndroid {
+        public static final String STRING = "string";
+        public static final String NAME = "name";
+        public static final String RESOURCES = "resources";
+        public static final String NEW_FILENAME = "newStrings.xml";
     }
 
-    class ParcerCSV {
+    public static final class ParcerCSV {
         public static final String FILENAME = "mergedFile.csv";
         public static final String KEY = "Key";
         public static final String VALUE = "Value";
