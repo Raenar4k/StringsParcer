@@ -28,10 +28,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         editTextAndroid = (EditText) findViewById(R.id.editTextAndroid);
         editTextAndroid.setText("strings");
         editTextiOS = (EditText) findViewById(R.id.editTextIOS);
+        editTextiOS.setText("localizable");
         textViewOutput = (TextView) findViewById(R.id.textViewOutput);
         Button buttonMerge = (Button) findViewById(R.id.buttonMerge);
         Button buttonSplit = (Button) findViewById(R.id.buttonSplit);
@@ -65,7 +66,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         if (debug) Log.d("Test", "onClick");
 
-        String fileNameiOS = editTextiOS.getText().toString();
+        String fileNameiOS = editTextiOS.getText().toString() + Constants.IOS_EXT;
         File pathiOS = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_IOS);
 
         String fileNameAndroid = editTextAndroid.getText().toString() + Constants.ANDROID_EXT;
@@ -89,11 +90,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 exportToCSV(mergedStringsList);
                             });
                 }
+                if (!pathiOS.exists()) {
+                    pathiOS.mkdirs();
+                }
+                File iOSFile = new File(pathiOS, fileNameiOS);
+                if (iOSFile.exists()) {
+                    parseFromIOS(iOSFile);
+                }
+
                 break;
             case R.id.buttonSplit:
                 File file = new File(Environment.getExternalStorageDirectory()
                         + Constants.DIRECTORY_MERGED, ParcerCSV.FILENAME);
-                if (file.exists()){
+                if (file.exists()) {
                     Observable.just(file)
                             .subscribeOn(Schedulers.io())
                             .map(this::importFromCSV)
@@ -104,18 +113,45 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    private List<StringObject> parseFromIOS(File file) {
+        List<StringObject> iOSStringList = new ArrayList<>();
+        try {
+            Scanner fileScanner = new Scanner(new FileInputStream(file));
+            String line;
+            if (!fileScanner.hasNextLine()) {
+                Log.d(TAG, "parseFromIOS: fail scan");
+            }
+            while (fileScanner.hasNextLine()) {
+                line = fileScanner.nextLine();
+                line = line.replace(";", "");
+                line = line.replace("\"", "");
+                String[] splitStrings = line.split("=");
+                String key = splitStrings[0].trim();
+                String value = splitStrings[1].trim();
+//                Log.d(TAG, "parseFromIOS: key =" + key + ";");
+//                Log.d(TAG, "parseFromIOS: value =" + value + ";");
+                iOSStringList.add(new StringObject(key, value, Constants.OS_IOS));
+            }
+            //todo better resource handling
+            fileScanner.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return iOSStringList;
+    }
+
     private List<StringObject> importFromCSV(File file) {
         List<StringObject> mergedStringsList = new ArrayList<>();
         try {
-            CSVReader csvReader = new CSVReader(new FileReader(file),';');
+            CSVReader csvReader = new CSVReader(new FileReader(file), ';');
             String nextLine[];
-            while ((nextLine = csvReader.readNext())!=null){
-                if (!nextLine[ParcerCSV.OS_INDEX].equals(ParcerCSV.OS)){
+            while ((nextLine = csvReader.readNext()) != null) {
+                if (!nextLine[ParcerCSV.OS_INDEX].equals(ParcerCSV.OS)) {
                     String key = nextLine[ParcerCSV.KEY_INDEX];
                     //skipping value, getting new value instead
                     String value = nextLine[ParcerCSV.NEW_VALUE_INDEX];
                     String os = nextLine[ParcerCSV.OS_INDEX];
-                    mergedStringsList.add(new StringObject(key,value,os));
+                    mergedStringsList.add(new StringObject(key, value, os));
                 }
             }
         } catch (FileNotFoundException e) {
