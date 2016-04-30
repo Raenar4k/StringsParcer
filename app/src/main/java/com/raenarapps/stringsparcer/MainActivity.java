@@ -10,6 +10,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.opencsv.CSVWriter;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
@@ -18,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,10 +80,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe((collection) -> {
                             mergedStringsList.addAll(collection);
-                            parseToAndroid(mergedStringsList);
+                            exportToCSV(mergedStringsList);
                         });
             }
         }
+    }
+
+    private void exportToCSV(List<StringObject> mergedStringsList) {
+        File pathMerged = new File(Environment.getExternalStorageDirectory()+Const.DIRECTORY_MERGED);
+        if (!pathMerged.exists()){
+            pathMerged.mkdirs();
+            if (debug) Log.d(TAG, "exportToCSV: mkdirs");
+        }
+        File fileMerged = new File(pathMerged, Const.ParcerCSV.FILENAME);
+        try {
+            fileMerged.createNewFile();
+            CSVWriter csvWriter = new CSVWriter(new FileWriter(fileMerged,true),';');
+            String[] header = {Const.ParcerCSV.KEY, Const.ParcerCSV.VALUE, Const.ParcerCSV.NEW_VALUE, Const.ParcerCSV.OS};
+            csvWriter.writeNext(header);
+            for (StringObject stringObject : mergedStringsList) {
+                String[] data = {stringObject.getKey(), stringObject.getValue(), "", stringObject.getOs()};
+                csvWriter.writeNext(data);
+            }
+            csvWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void parseToAndroid(List<StringObject> mergedStringsList) {
