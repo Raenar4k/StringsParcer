@@ -13,17 +13,16 @@ import android.widget.TextView;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -46,9 +45,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (buttonMerge != null) {
             buttonMerge.setOnClickListener(this);
         }
-        Observable.just("hello")
-                .map(s -> s + " test observable")
-                .subscribe(s -> Log.d(TAG, "onCreate: " + s));
     }
 
     @Override
@@ -56,28 +52,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (debug) Log.d("Test", "onClick");
         if (v.getId() == R.id.buttonMerge) {
             String fileNameiOS = editTextiOS.getText().toString();
-            File pathiOS = new File(Environment.getExternalStorageDirectory() + "/StringsParcer/iOS");
-            String fileNameAndroid = editTextAndroid.getText().toString() + ".xml";
-            File pathAndroid = new File(Environment.getExternalStorageDirectory() + "/StringsParcer/android");
+            File pathiOS = new File(Environment.getExternalStorageDirectory() + Const.DIRECTORY_IOS);
+
+            String fileNameAndroid = editTextAndroid.getText().toString() + Const.ANDROID_EXT;
+            File pathAndroid = new File(Environment.getExternalStorageDirectory() + Const.DIRECTORY_ANDROID);
             if (!pathAndroid.exists()) {
                 pathAndroid.mkdirs();
                 if (debug) Log.d(TAG, "mkdirs");
             }
+
             File androidFile = new File(pathAndroid, fileNameAndroid);
             if (androidFile.exists()) {
-                HashMap<String, String> androidStringMap = parseFromAndroid(androidFile);
-                Set<Map.Entry<String, String>> entries = androidStringMap.entrySet();
-                for (Map.Entry<String, String> entry : entries) {
-                    entry.getKey();
-                    entry.getValue();
-                }
+                Observable.just(androidFile)
+                        .subscribeOn(Schedulers.io())
+                        .map(this::parseFromAndroid)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(androidStringsList -> {
+                            for (StringObject stringObject : androidStringsList) {
+                                Log.d(TAG, "call: key=" + stringObject.getKey());
+                                Log.d(TAG, "call: value=" + stringObject.getValue());
+                            }
+                        });
             }
         }
     }
 
 
-    private HashMap<String, String> parseFromAndroid(File androidFile) {
-        HashMap<String, String> androidMap = new HashMap<>();
+    private List<StringObject> parseFromAndroid(File androidFile) {
+        List<StringObject> androidStringsList = new ArrayList<>();
         boolean gotText = false;
         XmlPullParser parser = Xml.newPullParser();
         try {
@@ -110,13 +112,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case XmlPullParser.END_TAG:
                         if (key != null && value != null) {
-                            androidMap.put(key, value);
+                            androidStringsList.add(new StringObject(key, value, Const.OS_ANDROID));
                             if (debug) Log.d(TAG, "END_TAG: key = " + key + " value = " + value);
                             key = null;
                             value = null;
                         }
                         break;
-
                     default:
                         break;
                 }
@@ -130,30 +131,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return androidMap;
-    }
-
-    private void simpleParse(File androidFile) {
-        HashMap<String, String> androidMap = new HashMap<>();
-        if (androidFile.exists()) {
-            StringBuilder stringBuilder = new StringBuilder();
-            if (debug) Log.d("Test", "file exists");
-            try {
-                BufferedReader reader = new BufferedReader(new FileReader(androidFile));
-                String line;
-
-                while ((line = reader.readLine()) != null) {
-                    stringBuilder.append(line);
-                    stringBuilder.append('\n');
-                }
-                reader.close();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (debug) Log.d("Test", "setText");
-            textViewOutput.setText(stringBuilder.toString());
-        }
+        return androidStringsList;
     }
 }
