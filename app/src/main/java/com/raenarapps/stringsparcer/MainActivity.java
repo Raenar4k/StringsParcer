@@ -14,6 +14,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.raenarapps.stringsparcer.Constants.ParcerAndroid;
 import com.raenarapps.stringsparcer.Constants.ParcerCSV;
+import com.raenarapps.stringsparcer.Constants.ParcerIOS;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -107,9 +108,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             .subscribeOn(Schedulers.io())
                             .map(this::importFromCSV)
                             .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe(this::parseToAndroid);
+                            .subscribe(this::parsetoIOS);
                 }
                 break;
+        }
+    }
+
+    private void parsetoIOS(List<StringObject> mergedStringsList) {
+        File file = new File (Environment.getExternalStorageDirectory() + Constants.DIRECTORY_IOS,
+                ParcerIOS.NEW_FILENAME);
+        try {
+            FileWriter writer = new FileWriter(file);
+            for (StringObject stringObject : mergedStringsList) {
+                if (stringObject.getOs().equals(Constants.OS_IOS)){
+                    writer.write(getString(R.string.IOS_string_format,
+                            stringObject.getKey(), stringObject.getValue()));
+                    writer.write("\n");
+                }
+            }
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -192,8 +211,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             file.createNewFile();
             FileOutputStream fos = new FileOutputStream(file);
             XmlSerializer serializer = Xml.newSerializer();
-            serializer.setOutput(fos, "UTF-8");
-            serializer.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true);
+            serializer.setOutput(fos, ParcerAndroid.ENCODING);
+            serializer.setFeature(ParcerAndroid.FEATURE_INDENT, true);
             serializer.startTag("", ParcerAndroid.RESOURCES);
             for (StringObject stringObject : mergedStringsList) {
                 if (stringObject.getOs().equals(Constants.OS_ANDROID)) {

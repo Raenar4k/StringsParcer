@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">StringsParcer</string>
+    <string name="IOS_string_format" formatted = "false">\"%s\" = \"%s\"</string>
 </resources>

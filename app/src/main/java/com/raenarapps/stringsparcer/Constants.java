@@ -15,6 +15,12 @@ public class Constants {
         public static final String NAME = "name";
         public static final String RESOURCES = "resources";
         public static final String NEW_FILENAME = "newStrings.xml";
+         public static final String FEATURE_INDENT = "http://xmlpull.org/v1/doc/features.html#indent-output";
+         public static final String ENCODING = "UTF-8";
+    }
+
+    public static final class ParcerIOS {
+        public static final String NEW_FILENAME = "newStrings.strings";
     }
 
     public static final class ParcerCSV {
