@@ -120,7 +120,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         try {
             FileWriter writer = new FileWriter(file);
             for (StringObject stringObject : mergedStringsList) {
-                if (stringObject.getOs().equals(Constants.OS_IOS)){
+                if (stringObject.getOs().equals(Constants.OS_IOS)
+                        || stringObject.getOs().equals(Constants.OS_ANY)){
                     writer.write(getString(R.string.IOS_string_format,
                             stringObject.getKey(), stringObject.getValue()));
                     writer.write("\n");
@@ -190,7 +191,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         File fileMerged = new File(pathMerged, ParcerCSV.FILENAME);
         try {
             fileMerged.createNewFile();
-            CSVWriter csvWriter = new CSVWriter(new FileWriter(fileMerged, true), ';');
+            CSVWriter csvWriter = new CSVWriter(new FileWriter(fileMerged, false), ';');
             String[] header = {ParcerCSV.KEY, ParcerCSV.VALUE, ParcerCSV.NEW_VALUE, ParcerCSV.OS};
             csvWriter.writeNext(header);
             for (StringObject stringObject : mergedStringsList) {
@@ -215,7 +216,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             serializer.setFeature(ParcerAndroid.FEATURE_INDENT, true);
             serializer.startTag("", ParcerAndroid.RESOURCES);
             for (StringObject stringObject : mergedStringsList) {
-                if (stringObject.getOs().equals(Constants.OS_ANDROID)) {
+                if (stringObject.getOs().equals(Constants.OS_ANDROID)
+                        || stringObject.getOs().equals(Constants.OS_ANY)) {
                     serializer.startTag(null, ParcerAndroid.STRING);
                     serializer.attribute(null, ParcerAndroid.NAME, stringObject.getKey());
                     serializer.text(stringObject.getValue());
