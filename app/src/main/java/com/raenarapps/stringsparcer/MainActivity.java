@@ -28,11 +28,12 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import rx.Observable;
-import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -42,6 +43,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private EditText editTextAndroid;
     private EditText editTextiOS;
     private TextView textViewOutput;
+    private List<StringObject> mergedStringsList;
+    private Map<String, String> usedKeysMap;
 
 
     @Override
@@ -61,44 +64,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (buttonSplit != null) {
             buttonSplit.setOnClickListener(this);
         }
+//        Observable<String> android = Observable.just("android").map(s -> s + " string1");
+//        Observable<String> iOS = Observable.just("iOS").map(s -> s + " string2");
+//        Observable.merge(android, iOS)
+//                .map(s -> s + " merged")
+//                .subscribe(s -> Log.d(TAG, "onClick: " + s));
     }
 
     @Override
     public void onClick(View v) {
-        if (debug) Log.d("Test", "onClick");
 
-        String fileNameiOS = editTextiOS.getText().toString() + Constants.IOS_EXT;
-        File pathiOS = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_IOS);
-
-        String fileNameAndroid = editTextAndroid.getText().toString() + Constants.ANDROID_EXT;
         File pathAndroid = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_ANDROID);
         if (!pathAndroid.exists()) {
             pathAndroid.mkdirs();
-            if (debug) Log.d(TAG, "mkdirs");
+        }
+        File pathiOS = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_IOS);
+        if (!pathiOS.exists()) {
+            pathiOS.mkdirs();
         }
 
         switch (v.getId()) {
             case R.id.buttonMerge:
-                List<StringObject> mergedStringsList = new ArrayList<>();
+                String fileNameAndroid = editTextAndroid.getText().toString() + Constants.ANDROID_EXT;
                 File androidFile = new File(pathAndroid, fileNameAndroid);
-                if (androidFile.exists()) {
-                    Observable.just(androidFile)
-                            .subscribeOn(Schedulers.io())
-                            .map(this::parseFromAndroid)
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe((collection) -> {
-                                mergedStringsList.addAll(collection);
-                                exportToCSV(mergedStringsList);
-                            });
-                }
-                if (!pathiOS.exists()) {
-                    pathiOS.mkdirs();
-                }
+                String fileNameiOS = editTextiOS.getText().toString() + Constants.IOS_EXT;
                 File iOSFile = new File(pathiOS, fileNameiOS);
-                if (iOSFile.exists()) {
-                    parseFromIOS(iOSFile);
-                }
 
+                if (androidFile.exists() && iOSFile.exists()) {
+                    //todo change from fields to local variables
+                    mergedStringsList = new ArrayList<>();
+                    usedKeysMap = new HashMap<>();
+
+                    Observable<List<StringObject>> androidObservable = Observable.just(androidFile)
+                            .subscribeOn(Schedulers.io())
+                            .map(this::parseFromAndroid);
+                    Observable<List<StringObject>> iOSObservable = Observable.just(iOSFile)
+                            .subscribeOn(Schedulers.io())
+                            .map(this::parseFromIOS);
+
+                    Observable.merge(androidObservable, iOSObservable)
+                            .subscribe(this::addToMergedList,
+                                    throwable -> Log.d(TAG, "observable onError"),
+                                    () -> exportToCSV(mergedStringsList));
+                }
                 break;
             case R.id.buttonSplit:
                 File file = new File(Environment.getExternalStorageDirectory()
@@ -107,21 +115,50 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Observable.just(file)
                             .subscribeOn(Schedulers.io())
                             .map(this::importFromCSV)
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe(this::parsetoIOS);
+                            .subscribe(mergedStringsList -> {
+                                parsetoIOS(mergedStringsList);
+                                parseToAndroid(mergedStringsList);
+                            });
                 }
                 break;
         }
     }
 
+    private void addToMergedList(List<StringObject> stringObjects) {
+        for (StringObject stringObject : stringObjects) {
+            String key = stringObject.getKey();
+            String value = stringObject.getValue();
+            String os = stringObject.getOs();
+            if (!usedKeysMap.containsKey(key)) {
+                usedKeysMap.put(key, value);
+                mergedStringsList.add(new StringObject(key, value, os));
+            } else {
+                String storedValue = usedKeysMap.get(key);
+                if (!storedValue.equals(value)) {
+                    mergedStringsList.add(new StringObject(key, value, os));
+                } else {
+                    for (StringObject mergedStringObject : mergedStringsList) {
+                        if (mergedStringObject.getKey().equals(key)
+                                && mergedStringObject.getValue().equals(value)
+                                && !mergedStringObject.getOs().equals(os)) {
+                            mergedStringObject.setOs(Constants.OS_ANY);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
     private void parsetoIOS(List<StringObject> mergedStringsList) {
-        File file = new File (Environment.getExternalStorageDirectory() + Constants.DIRECTORY_IOS,
+        File file = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_IOS,
                 ParcerIOS.NEW_FILENAME);
         try {
             FileWriter writer = new FileWriter(file);
             for (StringObject stringObject : mergedStringsList) {
                 if (stringObject.getOs().equals(Constants.OS_IOS)
-                        || stringObject.getOs().equals(Constants.OS_ANY)){
+                        || stringObject.getOs().equals(Constants.OS_ANY)) {
                     writer.write(getString(R.string.IOS_string_format,
                             stringObject.getKey(), stringObject.getValue()));
                     writer.write("\n");
