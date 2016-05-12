@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -43,8 +45,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private EditText editTextAndroid;
     private EditText editTextiOS;
     private TextView textViewOutput;
-    private List<StringObject> mergedStringsList;
-    private Map<String, String> usedKeysMap;
 
 
     @Override
@@ -64,12 +64,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (buttonSplit != null) {
             buttonSplit.setOnClickListener(this);
         }
-//        Observable<String> android = Observable.just("android").map(s -> s + " string1");
-//        Observable<String> iOS = Observable.just("iOS").map(s -> s + " string2");
-//        Observable.merge(android, iOS)
-//                .map(s -> s + " merged")
-//                .subscribe(s -> Log.d(TAG, "onClick: " + s));
-    }
+}
 
     @Override
     public void onClick(View v) {
@@ -91,21 +86,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 File iOSFile = new File(pathiOS, fileNameiOS);
 
                 if (androidFile.exists() && iOSFile.exists()) {
-                    //todo change from fields to local variables
-                    mergedStringsList = new ArrayList<>();
-                    usedKeysMap = new HashMap<>();
 
                     Observable<List<StringObject>> androidObservable = Observable.just(androidFile)
-                            .subscribeOn(Schedulers.io())
                             .map(this::parseFromAndroid);
                     Observable<List<StringObject>> iOSObservable = Observable.just(iOSFile)
-                            .subscribeOn(Schedulers.io())
                             .map(this::parseFromIOS);
 
-                    Observable.merge(androidObservable, iOSObservable)
-                            .subscribe(this::addToMergedList,
-                                    throwable -> Log.d(TAG, "observable onError"),
-                                    () -> exportToCSV(mergedStringsList));
+                    Observable<List<StringObject>> parseObservable = Observable.zip(
+                            androidObservable,
+                            iOSObservable,
+                            this::mergeLists);
+
+                    parseObservable
+                            .map(this::exportToCSV)
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(aVoid -> {
+                                Toast.makeText(MainActivity.this, "Merge complete", Toast.LENGTH_SHORT).show();
+                            }, e -> {
+                                Log.e(TAG, "parseObservable onError: " + e.getMessage());
+                            });
                 }
                 break;
             case R.id.buttonSplit:
@@ -124,20 +124,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    private void addToMergedList(List<StringObject> stringObjects) {
-        for (StringObject stringObject : stringObjects) {
+    private List<StringObject> mergeLists(List<StringObject> androidList, List<StringObject> iosList) {
+        List<StringObject> mergedStringsList = new ArrayList<>();
+        Map<String, String> usedKeysMap = new HashMap<>();
+
+        addToMergedList(androidList, mergedStringsList, usedKeysMap);
+        addToMergedList(iosList, mergedStringsList, usedKeysMap);
+        return mergedStringsList;
+    }
+
+    private void addToMergedList(List<StringObject> listToMerge,
+                                 List<StringObject> mergedList,
+                                 Map<String, String> usedKeysMap) {
+        for (StringObject stringObject : listToMerge) {
             String key = stringObject.getKey();
             String value = stringObject.getValue();
             String os = stringObject.getOs();
             if (!usedKeysMap.containsKey(key)) {
                 usedKeysMap.put(key, value);
-                mergedStringsList.add(new StringObject(key, value, os));
+                mergedList.add(new StringObject(key, value, os));
             } else {
                 String storedValue = usedKeysMap.get(key);
                 if (!storedValue.equals(value)) {
-                    mergedStringsList.add(new StringObject(key, value, os));
+                    mergedList.add(new StringObject(key, value, os));
                 } else {
-                    for (StringObject mergedStringObject : mergedStringsList) {
+                    for (StringObject mergedStringObject : mergedList) {
                         if (mergedStringObject.getKey().equals(key)
                                 && mergedStringObject.getValue().equals(value)
                                 && !mergedStringObject.getOs().equals(os)) {
@@ -219,7 +230,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return mergedStringsList;
     }
 
-    private void exportToCSV(List<StringObject> mergedStringsList) {
+    private Void exportToCSV(List<StringObject> mergedStringsList) {
         File pathMerged = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_MERGED);
         if (!pathMerged.exists()) {
             pathMerged.mkdirs();
@@ -239,7 +250,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+        return null;
     }
 
     private void parseToAndroid(List<StringObject> mergedStringsList) {
