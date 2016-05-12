@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (buttonSplit != null) {
             buttonSplit.setOnClickListener(this);
         }
-}
+    }
 
     @Override
     public void onClick(View v) {
@@ -92,32 +92,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Observable<List<StringObject>> iOSObservable = Observable.just(iOSFile)
                             .map(this::parseFromIOS);
 
-                    Observable<List<StringObject>> parseObservable = Observable.zip(
+                    Observable<List<StringObject>> mergeObservable = Observable.zip(
                             androidObservable,
                             iOSObservable,
                             this::mergeLists);
 
-                    parseObservable
+                    mergeObservable
                             .map(this::exportToCSV)
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(aVoid -> {
                                 Toast.makeText(MainActivity.this, "Merge complete", Toast.LENGTH_SHORT).show();
                             }, e -> {
-                                Log.e(TAG, "parseObservable onError: " + e.getMessage());
+                                Log.e(TAG, "mergeObservable onError: " + e.getMessage());
                             });
                 }
                 break;
             case R.id.buttonSplit:
-                File file = new File(Environment.getExternalStorageDirectory()
+                File mergedFile = new File(Environment.getExternalStorageDirectory()
                         + Constants.DIRECTORY_MERGED, ParserCSV.FILENAME);
-                if (file.exists()) {
-                    Observable.just(file)
-                            .subscribeOn(Schedulers.io())
+                if (mergedFile.exists()) {
+                    Observable.just(mergedFile)
                             .map(this::importFromCSV)
-                            .subscribe(mergedStringsList -> {
+                            .map(mergedStringsList -> {
                                 parsetoIOS(mergedStringsList);
                                 parseToAndroid(mergedStringsList);
+                                return null;
+                            })
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(aVoid -> {
+                                Toast.makeText(MainActivity.this, "Split complete", Toast.LENGTH_SHORT).show();
+                            }, e -> {
+                                Log.e(TAG, "splitObservable onError: " + e.getMessage());
                             });
                 }
                 break;
