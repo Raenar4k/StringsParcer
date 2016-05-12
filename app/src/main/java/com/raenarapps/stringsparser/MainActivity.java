@@ -1,4 +1,4 @@
-package com.raenarapps.stringsparcer;
+package com.raenarapps.stringsparser;
 
 import android.os.Bundle;
 import android.os.Environment;
@@ -12,9 +12,9 @@ import android.widget.TextView;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
-import com.raenarapps.stringsparcer.Constants.ParcerAndroid;
-import com.raenarapps.stringsparcer.Constants.ParcerCSV;
-import com.raenarapps.stringsparcer.Constants.ParcerIOS;
+import com.raenarapps.stringsparser.Constants.ParserAndroid;
+import com.raenarapps.stringsparser.Constants.ParserCSV;
+import com.raenarapps.stringsparser.Constants.ParserIOS;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.buttonSplit:
                 File file = new File(Environment.getExternalStorageDirectory()
-                        + Constants.DIRECTORY_MERGED, ParcerCSV.FILENAME);
+                        + Constants.DIRECTORY_MERGED, ParserCSV.FILENAME);
                 if (file.exists()) {
                     Observable.just(file)
                             .subscribeOn(Schedulers.io())
@@ -153,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void parsetoIOS(List<StringObject> mergedStringsList) {
         File file = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_IOS,
-                ParcerIOS.NEW_FILENAME);
+                ParserIOS.NEW_FILENAME);
         try {
             FileWriter writer = new FileWriter(file);
             for (StringObject stringObject : mergedStringsList) {
@@ -203,11 +203,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             CSVReader csvReader = new CSVReader(new FileReader(file), ';');
             String nextLine[];
             while ((nextLine = csvReader.readNext()) != null) {
-                if (!nextLine[ParcerCSV.OS_INDEX].equals(ParcerCSV.OS)) {
-                    String key = nextLine[ParcerCSV.KEY_INDEX];
+                if (!nextLine[ParserCSV.OS_INDEX].equals(ParserCSV.OS)) {
+                    String key = nextLine[ParserCSV.KEY_INDEX];
                     //skipping value, getting new value instead
-                    String value = nextLine[ParcerCSV.NEW_VALUE_INDEX];
-                    String os = nextLine[ParcerCSV.OS_INDEX];
+                    String value = nextLine[ParserCSV.NEW_VALUE_INDEX];
+                    String os = nextLine[ParserCSV.OS_INDEX];
                     mergedStringsList.add(new StringObject(key, value, os));
                 }
             }
@@ -225,11 +225,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             pathMerged.mkdirs();
             if (debug) Log.d(TAG, "exportToCSV: mkdirs");
         }
-        File fileMerged = new File(pathMerged, ParcerCSV.FILENAME);
+        File fileMerged = new File(pathMerged, ParserCSV.FILENAME);
         try {
             fileMerged.createNewFile();
             CSVWriter csvWriter = new CSVWriter(new FileWriter(fileMerged, false), ';');
-            String[] header = {ParcerCSV.KEY, ParcerCSV.VALUE, ParcerCSV.NEW_VALUE, ParcerCSV.OS};
+            String[] header = {ParserCSV.KEY, ParserCSV.VALUE, ParserCSV.NEW_VALUE, ParserCSV.OS};
             csvWriter.writeNext(header);
             for (StringObject stringObject : mergedStringsList) {
                 String[] data = {stringObject.getKey(), stringObject.getValue(), "", stringObject.getOs()};
@@ -244,24 +244,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void parseToAndroid(List<StringObject> mergedStringsList) {
         File file = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_ANDROID,
-                ParcerAndroid.NEW_FILENAME);
+                ParserAndroid.NEW_FILENAME);
         try {
             file.createNewFile();
             FileOutputStream fos = new FileOutputStream(file);
             XmlSerializer serializer = Xml.newSerializer();
-            serializer.setOutput(fos, ParcerAndroid.ENCODING);
-            serializer.setFeature(ParcerAndroid.FEATURE_INDENT, true);
-            serializer.startTag("", ParcerAndroid.RESOURCES);
+            serializer.setOutput(fos, ParserAndroid.ENCODING);
+            serializer.setFeature(ParserAndroid.FEATURE_INDENT, true);
+            serializer.startTag("", ParserAndroid.RESOURCES);
             for (StringObject stringObject : mergedStringsList) {
                 if (stringObject.getOs().equals(Constants.OS_ANDROID)
                         || stringObject.getOs().equals(Constants.OS_ANY)) {
-                    serializer.startTag(null, ParcerAndroid.STRING);
-                    serializer.attribute(null, ParcerAndroid.NAME, stringObject.getKey());
+                    serializer.startTag(null, ParserAndroid.STRING);
+                    serializer.attribute(null, ParserAndroid.NAME, stringObject.getKey());
                     serializer.text(stringObject.getValue());
-                    serializer.endTag(null, ParcerAndroid.STRING);
+                    serializer.endTag(null, ParserAndroid.STRING);
                 }
             }
-            serializer.endTag("", ParcerAndroid.RESOURCES);
+            serializer.endTag("", ParserAndroid.RESOURCES);
             serializer.endDocument();
             serializer.flush();
             fos.close();
@@ -286,10 +286,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         if (debug) Log.d(TAG, "START_DOCUMENT");
                         break;
                     case XmlPullParser.START_TAG:
-                        if (parser.getName().equals(ParcerAndroid.STRING)) {
+                        if (parser.getName().equals(ParserAndroid.STRING)) {
                             gotText = false;
                             for (int i = 0; i < parser.getAttributeCount(); i++) {
-                                if (parser.getAttributeName(i).equals(ParcerAndroid.NAME)) {
+                                if (parser.getAttributeName(i).equals(ParserAndroid.NAME)) {
                                     //name of the string
                                     key = parser.getAttributeValue(i);
                                 }

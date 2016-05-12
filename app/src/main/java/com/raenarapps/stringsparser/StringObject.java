@@ -1,4 +1,4 @@
-package com.raenarapps.stringsparcer;
+package com.raenarapps.stringsparser;
 
 public class StringObject {
     private String key;

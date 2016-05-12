@@ -1,4 +1,4 @@
-package com.raenarapps.stringsparcer;
+package com.raenarapps.stringsparser;
 
 public class Constants {
     public static final String OS_ANDROID = "android";
@@ -6,11 +6,11 @@ public class Constants {
     public static final String OS_ANY = "any";
     public static final String ANDROID_EXT = ".xml";
     public static final String IOS_EXT = ".strings";
-    public static final String DIRECTORY_IOS = "/StringsParcer/iOS";
-    public static final String DIRECTORY_ANDROID = "/StringsParcer/android";
-    public static final String DIRECTORY_MERGED = "/StringsParcer/merged";
+    public static final String DIRECTORY_IOS = "/StringsParser/iOS";
+    public static final String DIRECTORY_ANDROID = "/StringsParser/android";
+    public static final String DIRECTORY_MERGED = "/StringsParser/merged";
 
-     public static final class ParcerAndroid {
+     public static final class ParserAndroid {
         public static final String STRING = "string";
         public static final String NAME = "name";
         public static final String RESOURCES = "resources";
@@ -19,11 +19,11 @@ public class Constants {
          public static final String ENCODING = "UTF-8";
     }
 
-    public static final class ParcerIOS {
+    public static final class ParserIOS {
         public static final String NEW_FILENAME = "newStrings.strings";
     }
 
-    public static final class ParcerCSV {
+    public static final class ParserCSV {
         public static final String FILENAME = "mergedFile.csv";
         public static final String KEY = "Key";
         public static final String VALUE = "Value";
