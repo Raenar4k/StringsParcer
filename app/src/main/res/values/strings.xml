@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">StringsParser</string>
     <string name="IOS_string_format" formatted = "false">\"%s\" = \"%s\"</string>
+    <string name="toast_android_notfound">Android file not found</string>
+    <string name="toast_ios_notfound">iOS file not found</string>
+    <string name="toast_merge">Merge complete</string>
+    <string name="toast_split">Split complete</string>
+    <string name="toast_merge_not_found">Merged file not found</string>
 </resources>

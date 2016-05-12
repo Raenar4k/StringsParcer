@@ -40,8 +40,9 @@ import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private static final String TAG = "Test";
-    boolean debug = true;
+    private static final String TAG = "StringsParser";
+    private boolean debugAndroid = false;
+    private boolean debugIOS = false;
     private EditText editTextAndroid;
     private EditText editTextiOS;
     private TextView textViewOutput;
@@ -64,11 +65,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (buttonSplit != null) {
             buttonSplit.setOnClickListener(this);
         }
+        makeDirectoriesIfNeeded();
     }
 
-    @Override
-    public void onClick(View v) {
-
+    private void makeDirectoriesIfNeeded() {
         File pathAndroid = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_ANDROID);
         if (!pathAndroid.exists()) {
             pathAndroid.mkdirs();
@@ -77,16 +77,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (!pathiOS.exists()) {
             pathiOS.mkdirs();
         }
+        File pathMerged = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_MERGED);
+        if (!pathMerged.exists()) {
+            pathMerged.mkdirs();
+        }
+    }
+
+    @Override
+    public void onClick(View v) {
+
+        File pathAndroid = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_ANDROID);
+        File pathiOS = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_IOS);
 
         switch (v.getId()) {
             case R.id.buttonMerge:
                 String fileNameAndroid = editTextAndroid.getText().toString() + Constants.ANDROID_EXT;
                 File androidFile = new File(pathAndroid, fileNameAndroid);
+                if (!androidFile.exists())
+                    Toast.makeText(this, R.string.toast_android_notfound, Toast.LENGTH_SHORT).show();
                 String fileNameiOS = editTextiOS.getText().toString() + Constants.IOS_EXT;
                 File iOSFile = new File(pathiOS, fileNameiOS);
+                if (!iOSFile.exists())
+                    Toast.makeText(this, R.string.toast_ios_notfound, Toast.LENGTH_SHORT).show();
 
                 if (androidFile.exists() && iOSFile.exists()) {
-
                     Observable<List<StringObject>> androidObservable = Observable.just(androidFile)
                             .map(this::parseFromAndroid);
                     Observable<List<StringObject>> iOSObservable = Observable.just(iOSFile)
@@ -102,7 +116,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(aVoid -> {
-                                Toast.makeText(MainActivity.this, "Merge complete", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MainActivity.this, R.string.toast_merge,
+                                        Toast.LENGTH_SHORT).show();
                             }, e -> {
                                 Log.e(TAG, "mergeObservable onError: " + e.getMessage());
                             });
@@ -122,10 +137,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(aVoid -> {
-                                Toast.makeText(MainActivity.this, "Split complete", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MainActivity.this, R.string.toast_split,
+                                        Toast.LENGTH_SHORT).show();
                             }, e -> {
                                 Log.e(TAG, "splitObservable onError: " + e.getMessage());
                             });
+                } else {
+                    Toast.makeText(MainActivity.this, R.string.toast_merge_not_found,
+                            Toast.LENGTH_SHORT).show();
                 }
                 break;
         }
@@ -194,7 +213,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Scanner fileScanner = new Scanner(new FileInputStream(file));
             String line;
             if (!fileScanner.hasNextLine()) {
-                Log.d(TAG, "parseFromIOS: fail scan");
+                if (debugIOS) Log.d(TAG, "parseFromIOS: fail scan");
             }
             while (fileScanner.hasNextLine()) {
                 line = fileScanner.nextLine();
@@ -203,8 +222,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 String[] splitStrings = line.split("=");
                 String key = splitStrings[0].trim();
                 String value = splitStrings[1].trim();
-//                Log.d(TAG, "parseFromIOS: key =" + key + ";");
-//                Log.d(TAG, "parseFromIOS: value =" + value + ";");
+                if (debugIOS) Log.d(TAG, "parseFromIOS: key =" + key + ";");
+                if (debugIOS) Log.d(TAG, "parseFromIOS: value =" + value + ";");
                 iOSStringList.add(new StringObject(key, value, Constants.OS_IOS));
             }
             //todo better resource handling
@@ -238,12 +257,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private Void exportToCSV(List<StringObject> mergedStringsList) {
-        File pathMerged = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_MERGED);
-        if (!pathMerged.exists()) {
-            pathMerged.mkdirs();
-            if (debug) Log.d(TAG, "exportToCSV: mkdirs");
-        }
-        File fileMerged = new File(pathMerged, ParserCSV.FILENAME);
+        File fileMerged = new File(Environment.getExternalStorageDirectory() + Constants.DIRECTORY_MERGED,
+                ParserCSV.FILENAME);
         try {
             fileMerged.createNewFile();
             CSVWriter csvWriter = new CSVWriter(new FileWriter(fileMerged, false), ';');
@@ -301,7 +316,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             while (parser.getEventType() != XmlPullParser.END_DOCUMENT) {
                 switch (parser.getEventType()) {
                     case XmlPullParser.START_DOCUMENT:
-                        if (debug) Log.d(TAG, "START_DOCUMENT");
+                        if (debugAndroid) Log.d(TAG, "START_DOCUMENT");
                         break;
                     case XmlPullParser.START_TAG:
                         if (parser.getName().equals(ParserAndroid.STRING)) {
@@ -324,7 +339,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     case XmlPullParser.END_TAG:
                         if (key != null && value != null) {
                             androidStringsList.add(new StringObject(key, value, Constants.OS_ANDROID));
-                            if (debug) Log.d(TAG, "END_TAG: key = " + key + " value = " + value);
+                            if (debugAndroid)
+                                Log.d(TAG, "END_TAG: key = " + key + " value = " + value);
                             key = null;
                             value = null;
                         }
@@ -334,7 +350,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 parser.next();
             }
-            if (debug) Log.d(TAG, "END_DOCUMENT");
+            if (debugAndroid) Log.d(TAG, "END_DOCUMENT");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (XmlPullParserException e) {
