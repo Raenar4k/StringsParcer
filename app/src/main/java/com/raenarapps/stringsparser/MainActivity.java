@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 import rx.Observable;
+import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -46,6 +47,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private EditText editTextAndroid;
     private EditText editTextiOS;
     private TextView textViewOutput;
+    private Subscription mergeSubscription;
+    private Subscription splitSubscription;
 
 
     @Override
@@ -111,7 +114,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             iOSObservable,
                             this::mergeLists);
 
-                    mergeObservable
+                    mergeSubscription = mergeObservable
                             .map(this::exportToCSV)
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
@@ -127,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 File mergedFile = new File(Environment.getExternalStorageDirectory()
                         + Constants.DIRECTORY_MERGED, ParserCSV.FILENAME);
                 if (mergedFile.exists()) {
-                    Observable.just(mergedFile)
+                    splitSubscription = Observable.just(mergedFile)
                             .map(this::importFromCSV)
                             .map(mergedStringsList -> {
                                 parsetoIOS(mergedStringsList);
@@ -359,5 +362,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             e.printStackTrace();
         }
         return androidStringsList;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mergeSubscription!=null){
+            mergeSubscription.unsubscribe();
+        }
+        if (splitSubscription!=null){
+            splitSubscription.unsubscribe();
+        }
     }
 }
