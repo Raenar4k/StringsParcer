@@ -1,0 +1,9 @@
+"app_name" = "Simple Collage";
+"snackbar_min_count" = "Select 4 or more images";
+"button_share" = "Share";
+"button_get" = "Get collage";
+"button_search" = "Search";
+"edittext_hint" = "Username";
+"os_message" = "hi, im iOS string";
+"toast_request_fail" = "Failed to load; Check internet connection";
+"toast_request_user_not_found" = "User not found";

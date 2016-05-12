@@ -1,0 +1,11 @@
+Key;Value;New Value;OS
+app_name;Simple Collage;(Translated) Simple Collage;any
+snackbar_min_count;Select 4 or more images;(Translated) Select 4 or more images;any
+button_share;Share;(Translated) Share;any
+button_get;Get collage;(Translated) Get collage;any
+button_search;Search;(Translated) Search;any
+edittext_hint;Username;(Translated) Username;any
+os_message;hi, im android string;(Translated) hi, im android string;android
+os_message;hi, im iOS string;(Translated) hi, im iOS string;iOS
+toast_request_fail;Failed to load Check internet connection;(Translated) Failed to load Check internet connection;iOS
+toast_request_user_not_found;User not found;(Translated) User not found;iOS

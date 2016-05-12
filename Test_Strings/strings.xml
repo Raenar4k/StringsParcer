@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Simple Collage</string>
+    <string name="snackbar_min_count">Select 4 or more images</string>
+    <string name="button_share">Share</string>
+    <string name="button_get">Get collage</string>
+    <string name="button_search">Search</string>
+    <string name="edittext_hint">Username</string>
+
+	<string name="os_message">hi, im android string</string>
+</resources>
